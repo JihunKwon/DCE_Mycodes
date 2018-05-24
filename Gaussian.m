@@ -20,7 +20,7 @@ clc;
 % basefolder = '/Users/Kwon/Documents/MATLAB/DCE_MRI/Group4_Control/Day6_post/16-BERB035_350_350_20160426_v2__E3_P1';
 % basefolder = '/Users/Kwon/Documents/MATLAB/DCE_MRI/Group4_Control/Day6_post/16-BERB035_355_355_20160426_v2__E3_P1';
 
-for i=1:5
+for i=1:450
     fdcm_pre = sprintf('MRIm%03d.dcm', i);
     fname = fullfile(basefolder, fdcm_pre);
     [X,map] = dicomread(fname);
@@ -40,5 +40,5 @@ for i=1:5
     Y4 = imgaussfilt(X,4);
     fdcm_4 = sprintf('4_MRIm%03d.dcm', i);
     fdcm_4 = char(fdcm_4);
-    dicomwrite(Y2, fdcm_4, info);
+    dicomwrite(Y4, fdcm_4, info);
 end
