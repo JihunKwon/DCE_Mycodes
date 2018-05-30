@@ -2,6 +2,11 @@
 clear;
 clc;
 
+% 1. Change the directory
+% 2. Change base folder
+% 3. Change PatientID
+% 4. Change PatientName
+
 % G1
  basefolder = '/Users/Kwon/Documents/MATLAB/DCE_MRI/Group1_GNP+IR/Day6_post/16-BERB035_334_334_20160412__E5_P1';
 % basefolder = '/Users/Kwon/Documents/MATLAB/DCE_MRI/Group1_GNP+IR/Day6_post/16-BERB035_337_337_20160412__E5_P1';
@@ -26,12 +31,20 @@ for i=1:450
     [X,map] = dicomread(fname);
     info = dicominfo(fname);
     
+     %% For T1G1
+    info.PatientID = '334_T1G1';
+    info.PatientName.FamilyName = '334_T1G1';
+    Y1 = imgaussfilt(X,1);
+    fdcm_1 = sprintf('1_MRIm%03d.dcm', i);
+%    fdcm_1 = char(fdcm_1);
+    dicomwrite(Y1, fdcm_1, info);
+   
     %% For T1G2
     info.PatientID = '334_T1G2';
     info.PatientName.FamilyName = '334_T1G2';
     Y2 = imgaussfilt(X,2);
     fdcm_2 = sprintf('2_MRIm%03d.dcm', i);
-    fdcm_2 = char(fdcm_2);
+%    fdcm_2 = char(fdcm_2);
     dicomwrite(Y2, fdcm_2, info);
 
     %% For T1G4
@@ -39,6 +52,7 @@ for i=1:450
     info.PatientName.FamilyName = '334_T1G4';
     Y4 = imgaussfilt(X,4);
     fdcm_4 = sprintf('4_MRIm%03d.dcm', i);
-    fdcm_4 = char(fdcm_4);
+%    fdcm_4 = char(fdcm_4);
     dicomwrite(Y4, fdcm_4, info);
+
 end
