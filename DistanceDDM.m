@@ -17,6 +17,9 @@ figure(41); clf('reset');set(gcf,'Position',[440   378   560   420]);
 figure(42); clf('reset');set(gcf,'Position',[440   378   560   420]);
 figure(43); clf('reset');set(gcf,'Position',[440   378   560   420]);
 figure(44); clf('reset');set(gcf,'Position',[440   378   560   420]);
+figure(51); clf('reset');set(gcf,'Position',[440   378   560   420]);
+figure(52); clf('reset');set(gcf,'Position',[440   378   560   420]);
+figure(53); clf('reset');set(gcf,'Position',[440   378   560   420]);
 
 %%
 %Convert voxel to volume
@@ -30,22 +33,22 @@ AnimalID = AnimalID(:);
 %GdNP+RT:1,2,4,8; RT:10,11,12; GdNP:3,6,7; Control:5,9,13
 
 DepthBinLimit = 70;
-TotCount = zeros(13,5,DepthBinLimit);
-Total = zeros(13,5,DepthBinLimit);
-NetCount = zeros(13,5,DepthBinLimit);
-Net = zeros(13,5,DepthBinLimit);
+TotCount = zeros(13,1,DepthBinLimit);
+Total = zeros(13,1,DepthBinLimit);
+NetCount = zeros(13,1,DepthBinLimit);
+Net = zeros(13,1,DepthBinLimit);
 Ave = zeros(13,5,DepthBinLimit);
 
-NetCountBin = zeros(13,5,20);
-NetBin = zeros(13,5,20);
-AveBin = zeros(13,5,20);
+NetCountBin = zeros(13,1,20);
+NetBin = zeros(13,1,20);
+AveBin = zeros(13,1,20);
 NetCountBinMax = zeros(13,20);
 NetBinMax = zeros(13,20);
 AveBinMax = zeros(13,20);
 
-NetCountBinSiju = zeros(13,5,20);
-NetBinSiju = zeros(13,5,20);
-AveBinSiju = zeros(13,5,20);
+NetCountBinSiju = zeros(13,1,20);
+NetBinSiju = zeros(13,1,20);
+AveBinSiju = zeros(13,1,20);
 NetCountBinMaxSiju = zeros(13,20);
 NetBinMaxSiju = zeros(13,20);
 AveBinMaxSiju = zeros(13,20);
@@ -54,17 +57,27 @@ TargetLog = zeros(13,1);
 KtransFrac = zeros(13,DepthBinLimit);
 AveKtrans = zeros(13,1);
 
-NetCountBinRelative = zeros(13,5,20);
-NetBinRelative = zeros(13,5,20);
-AveBinRelative = zeros(13,5,20);
+NetCountBinRelative = zeros(13,1,20);
+NetBinRelative = zeros(13,1,20);
+AveBinRelative = zeros(13,1,20);
 NetCountBinMaxRelative = zeros(13,20);
 NetBinMaxRelative = zeros(13,20);
 AveBinMaxRelative = zeros(13,20);
 
-MaxDepth = zeros(13,6); %Relative depth from edge. (AnimalID, Slice, MaxDepth)
-RelativeCount = zeros(13,5);
-RelativeNet = zeros(13,5);
-RelativeAve = zeros(13,5);
+MaxDepth5 = zeros(13,6); %Relative depth from edge. (AnimalID, Slice, MaxDepth)
+RelativeCount5 = zeros(13,10);
+RelativeNet5 = zeros(13,10);
+RelativeAve5 = zeros(13,10);
+
+MaxDepth10 = zeros(13,6); %Relative depth from edge. (AnimalID, Slice, MaxDepth)
+RelativeCount10 = zeros(13,10);
+RelativeNet10 = zeros(13,10);
+RelativeAve10 = zeros(13,10);
+
+AveAveBinMaxSiju = zeros(10,4);
+AveAveBinMax = zeros(10,4);
+AveRelativeAve = zeros(10,4);
+
 %% Main Program
 for k = 1:size(AnimalID,1)
     %Import Tumor mask
@@ -94,7 +107,7 @@ for k = 1:size(AnimalID,1)
             %imcontour(Vddm_distance,7);
 
             %Import Ktrans map
-            fktrans = sprintf('%d_Output Ktrans image_pop.nrrd', AnimalID(k));
+            fktrans = sprintf('%d_Output Ktrans image.nrrd', AnimalID(k));
             fname_ktrans = fullfile(basefolder, fktrans);
 
             if exist(fname_ktrans,'file')
@@ -166,41 +179,92 @@ for k = 1:size(AnimalID,1)
                 end
                 
                 %% Relative Depth
+                %For 20% bin 
                 for i=DepthBinLimit:-1:1
                     depth = FindMaxDepth(Net,k,i); %Find Maximum i. i=depth
                     if depth~=0
-                        MaxDepth(k,1) = depth;
+                        MaxDepth5(k,1) = depth;
                         break;
                     end
                 end
                 
                 for j = 2:6
-                    MaxDepth(k,j) = MaxDepth(k,1)/100*(j-1)*20; %Convert to 20%,40%,...,100%
+                    MaxDepth5(k,j) = MaxDepth5(k,1)/100*(j-1)*20; %Convert to 20%,40%,...,100%
                 end
-                MaxDepth(k,1)=0; %To use this variable in the next for loop
+                MaxDepth5(k,1)=0; %To use this variable in the next for loop
                 
                 for i = 1:1:DepthBinLimit
-                    if i <= MaxDepth(k,2)
-                        RelativeCount(k,1) = RelativeCount(k,1) + NetCount(k,1,i);
-                        RelativeNet(k,1) = RelativeNet(k,1) + Net(k,1,i);
-                    elseif i <= MaxDepth(k,3)
-                        RelativeCount(k,2) = RelativeCount(k,2) + NetCount(k,1,i);
-                        RelativeNet(k,2) = RelativeNet(k,2) + Net(k,1,i);
-                    elseif i <= MaxDepth(k,4)
-                        RelativeCount(k,3) = RelativeCount(k,3) + NetCount(k,1,i);
-                        RelativeNet(k,3) = RelativeNet(k,3) + Net(k,1,i);
-                    elseif i <= MaxDepth(k,5)
-                        RelativeCount(k,4) = RelativeCount(k,4) + NetCount(k,1,i);
-                        RelativeNet(k,4) = RelativeNet(k,4) + Net(k,1,i);
-                    elseif i <= MaxDepth(k,6)
-                        RelativeCount(k,5) = RelativeCount(k,5) + NetCount(k,1,i);
-                        RelativeNet(k,5) = RelativeNet(k,5) + Net(k,1,i);
+                    if i <= MaxDepth5(k,2)
+                        RelativeCount5(k,1) = RelativeCount5(k,1) + NetCount(k,1,i);
+                        RelativeNet5(k,1) = RelativeNet5(k,1) + Net(k,1,i);
+                    elseif i <= MaxDepth5(k,3)
+                        RelativeCount5(k,2) = RelativeCount5(k,2) + NetCount(k,1,i);
+                        RelativeNet5(k,2) = RelativeNet5(k,2) + Net(k,1,i);
+                    elseif i <= MaxDepth5(k,4)
+                        RelativeCount5(k,3) = RelativeCount5(k,3) + NetCount(k,1,i);
+                        RelativeNet5(k,3) = RelativeNet5(k,3) + Net(k,1,i);
+                    elseif i <= MaxDepth5(k,5)
+                        RelativeCount5(k,4) = RelativeCount5(k,4) + NetCount(k,1,i);
+                        RelativeNet5(k,4) = RelativeNet5(k,4) + Net(k,1,i);
+                    elseif i <= MaxDepth5(k,6)
+                        RelativeCount5(k,5) = RelativeCount5(k,5) + NetCount(k,1,i);
+                        RelativeNet5(k,5) = RelativeNet5(k,5) + Net(k,1,i);
+                    end
+                end
+                
+                %For 10% bin
+                for i=DepthBinLimit:-1:1
+                    depth = FindMaxDepth(Net,k,i); %Find Maximum i. i=depth
+                    if depth~=0
+                        MaxDepth10(k,1) = depth;
+                        break;
+                    end
+                end
+                for j = 2:11
+                    MaxDepth10(k,j) = MaxDepth10(k,1)/100*(j-1)*10; %Convert to 10%,20%,...,100%
+                end
+                MaxDepth10(k,1)=0; %To use this variable in the next for loop
+                
+                for i = 1:1:DepthBinLimit
+                    if i <= MaxDepth10(k,2)
+                        RelativeCount10(k,1) = RelativeCount10(k,1) + NetCount(k,1,i);
+                        RelativeNet10(k,1) = RelativeNet10(k,1) + Net(k,1,i);
+                    elseif i <= MaxDepth10(k,3)
+                        RelativeCount10(k,2) = RelativeCount10(k,2) + NetCount(k,1,i);
+                        RelativeNet10(k,2) = RelativeNet10(k,2) + Net(k,1,i);
+                    elseif i <= MaxDepth10(k,4)
+                        RelativeCount10(k,3) = RelativeCount10(k,3) + NetCount(k,1,i);
+                        RelativeNet10(k,3) = RelativeNet10(k,3) + Net(k,1,i);
+                    elseif i <= MaxDepth10(k,5)
+                        RelativeCount10(k,4) = RelativeCount10(k,4) + NetCount(k,1,i);
+                        RelativeNet10(k,4) = RelativeNet10(k,4) + Net(k,1,i);
+                    elseif i <= MaxDepth10(k,6)
+                        RelativeCount10(k,5) = RelativeCount10(k,5) + NetCount(k,1,i);
+                        RelativeNet10(k,5) = RelativeNet10(k,5) + Net(k,1,i);
+                    elseif i <= MaxDepth10(k,7)
+                        RelativeCount10(k,6) = RelativeCount10(k,6) + NetCount(k,1,i);
+                        RelativeNet10(k,6) = RelativeNet10(k,6) + Net(k,1,i);
+                    elseif i <= MaxDepth10(k,8)
+                        RelativeCount10(k,7) = RelativeCount10(k,7) + NetCount(k,1,i);
+                        RelativeNet10(k,7) = RelativeNet10(k,7) + Net(k,1,i);
+                    elseif i <= MaxDepth10(k,9)
+                        RelativeCount10(k,8) = RelativeCount10(k,8) + NetCount(k,1,i);
+                        RelativeNet10(k,8) = RelativeNet10(k,8) + Net(k,1,i);
+                    elseif i <= MaxDepth10(k,10)
+                        RelativeCount10(k,9) = RelativeCount10(k,9) + NetCount(k,1,i);
+                        RelativeNet10(k,9) = RelativeNet10(k,9) + Net(k,1,i);
+                    elseif i <= MaxDepth10(k,11)
+                        RelativeCount10(k,10) = RelativeCount10(k,10) + NetCount(k,1,i);
+                        RelativeNet10(k,10) = RelativeNet10(k,10) + Net(k,1,i);
                     end
                 end
                 
                 for i = 1:1:DepthBinLimit
                     for j = 1:5
-                        RelativeAve(k,j) = RelativeNet(k,j)/RelativeCount(k,j);
+                        RelativeAve5(k,j) = RelativeNet5(k,j)/RelativeCount5(k,j);
+                    end
+                    for j = 1:10
+                        RelativeAve10(k,j) = RelativeNet10(k,j)/RelativeCount10(k,j);
                     end
                 end
             else
@@ -219,11 +283,33 @@ fprintf('Average Ktrans for GdNP+RT = %d\n', (AveKtrans(1,1)+AveKtrans(2,1)+AveK
 fprintf('Average Ktrans for RT = %d\n', (AveKtrans(10,1)+AveKtrans(11,1)+AveKtrans(12,1))/3);
 fprintf('Average Ktrans for GdNP = %d\n', (AveKtrans(3,1)+AveKtrans(6,1)+AveKtrans(7,1))/3);
 fprintf('Average Ktrans for Control = %d\n', (AveKtrans(5,1)+AveKtrans(9,1)+AveKtrans(13,1))/3);
-                
+
 %% Draw Figure
 MaxBin = 60;
 RoundMax = round(MaxBin/ModulateBin);
 RoundMaxSiju = round(MaxBin/ModulateBinSiju);
+
+%1:NP+RT, 2:RT, 3:Gd, 4:Control
+AveAveBinMaxSiju(1,1:RoundMaxSiju) = (AveBinMaxSiju(1,1:RoundMaxSiju)+AveBinMaxSiju(2,1:RoundMaxSiju)+AveBinMaxSiju(3,1:RoundMaxSiju)+AveBinMaxSiju(8,1:RoundMaxSiju))/4;
+AveAveBinMaxSiju(2,1:RoundMaxSiju) = (AveBinMaxSiju(10,1:RoundMaxSiju)+AveBinMaxSiju(11,1:RoundMaxSiju)+AveBinMaxSiju(12,1:RoundMaxSiju))/3;
+AveAveBinMaxSiju(3,1:RoundMaxSiju) = (AveBinMaxSiju(3,1:RoundMaxSiju)+AveBinMaxSiju(6,1:RoundMaxSiju)+AveBinMaxSiju(7,1:RoundMaxSiju))/3;
+AveAveBinMaxSiju(4,1:RoundMaxSiju) = (AveBinMaxSiju(5,1:RoundMaxSiju)+AveBinMaxSiju(9,1:RoundMaxSiju)+AveBinMaxSiju(13,1:RoundMaxSiju))/3;
+
+AveAveBinMax(1,1:RoundMax) = (AveBinMax(1,1:RoundMax)+AveBinMax(2,1:RoundMax)+AveBinMax(3,1:RoundMax)+AveBinMax(8,1:RoundMax))/4;
+AveAveBinMax(2,1:RoundMax) = (AveBinMax(10,1:RoundMax)+AveBinMax(11,1:RoundMax)+AveBinMax(12,1:RoundMax))/3;
+AveAveBinMax(3,1:RoundMax) = (AveBinMax(3,1:RoundMax)+AveBinMax(6,1:RoundMax)+AveBinMax(7,1:RoundMax))/3;
+AveAveBinMax(4,1:RoundMax) = (AveBinMax(5,1:RoundMax)+AveBinMax(9,1:RoundMax)+AveBinMaxSiju(13,1:RoundMax))/3;
+
+AveRelativeAve5(1,1:5) = (RelativeAve5(1,1:5)+RelativeAve5(2,1:5)+RelativeAve5(3,1:5)+RelativeAve5(8,1:5))/4;
+AveRelativeAve5(2,1:5) = (RelativeAve5(10,1:5)+RelativeAve5(11,1:5)+RelativeAve5(12,1:5))/3;
+AveRelativeAve5(3,1:5) = (RelativeAve5(3,1:5)+RelativeAve5(6,1:5)+RelativeAve5(7,1:5))/3;
+AveRelativeAve5(4,1:5) = (RelativeAve5(5,1:5)+RelativeAve5(9,1:5)+RelativeAve5(13,1:5))/3;
+
+AveRelativeAve10(1,1:10) = (RelativeAve10(1,1:10)+RelativeAve10(2,1:10)+RelativeAve10(3,1:10)+RelativeAve10(8,1:10))/4;
+AveRelativeAve10(2,1:10) = (RelativeAve10(10,1:10)+RelativeAve10(11,1:10)+RelativeAve10(12,1:10))/3;
+AveRelativeAve10(3,1:10) = (RelativeAve10(3,1:10)+RelativeAve10(6,1:10)+RelativeAve10(7,1:10))/3;
+AveRelativeAve10(4,1:10) = (RelativeAve10(5,1:10)+RelativeAve10(9,1:10)+RelativeAve10(13,1:10))/3;
+
 for k = 1:size(AnimalID,1)
     if (k == 1 || k == 2 || k == 4 || k == 8) %GdNP+RT
         if k == 1
@@ -234,10 +320,10 @@ for k = 1:size(AnimalID,1)
             plot(ModulateBin:ModulateBin:MaxBin,NetCountBinMax(k,1:RoundMax),'-o','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(13); hold on;
-            plot(ModulateBin:ModulateBin:MaxBin,AveBinMax(k,1:RoundMax),'-o','LineWidth',2,'MarkerSize',10);
+            plot(1:10,RelativeAve10(k,1:10),'-o','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(14); hold on;
-            plot(1:1:5,RelativeAve(k,1:5),'-o','LineWidth',2,'MarkerSize',10);
+            plot(1:5,RelativeAve5(k,1:5),'-o','LineWidth',2,'MarkerSize',10);
             hold off;
         elseif k == 2
             figure(11); hold on;
@@ -247,10 +333,10 @@ for k = 1:size(AnimalID,1)
             plot(ModulateBin:ModulateBin:MaxBin,NetCountBinMax(k,1:RoundMax),'-+','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(13); hold on;
-            plot(ModulateBin:ModulateBin:MaxBin,AveBinMax(k,1:RoundMax),'-+','LineWidth',2,'MarkerSize',10);
+            plot(1:10,RelativeAve10(k,1:10),'-+','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(14); hold on;
-            plot(1:1:5,RelativeAve(k,1:5),'-+','LineWidth',2,'MarkerSize',10);
+            plot(1:5,RelativeAve5(k,1:5),'-+','LineWidth',2,'MarkerSize',10);
             hold off;
         elseif k == 4
             figure(11); hold on;
@@ -260,23 +346,29 @@ for k = 1:size(AnimalID,1)
             plot(ModulateBin:ModulateBin:MaxBin,NetCountBinMax(k,1:RoundMax),'-*','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(13); hold on;
-            plot(ModulateBin:ModulateBin:MaxBin,AveBinMax(k,1:RoundMax),'-*','LineWidth',2,'MarkerSize',10);
+            plot(1:10,RelativeAve10(k,1:10),'-*','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(14); hold on;
-            plot(1:1:5,RelativeAve(k,1:5),'-*','LineWidth',2,'MarkerSize',10);
+            plot(1:5,RelativeAve5(k,1:5),'-*','LineWidth',2,'MarkerSize',10);
             hold off;
         elseif k == 8
             figure(11); hold on;
             plot(ModulateBinSiju:ModulateBinSiju:MaxBin,AveBinMaxSiju(k,1:RoundMaxSiju),'-^','LineWidth',2,'MarkerSize',10);
+            hold on; %Average
+            plot(ModulateBinSiju:ModulateBinSiju:MaxBin,AveAveBinMaxSiju(1,1:RoundMaxSiju),'--kd','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(12); hold on;
             plot(ModulateBin:ModulateBin:MaxBin,NetCountBinMax(k,1:RoundMax),'-^','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(13); hold on;
-            plot(ModulateBin:ModulateBin:MaxBin,AveBinMax(k,1:RoundMax),'-^','LineWidth',2,'MarkerSize',10);
+            plot(1:10,RelativeAve10(k,1:10),'-^','LineWidth',2,'MarkerSize',10);
+            hold on; %Average
+            plot(1:10,AveRelativeAve10(1,1:10),'--kd','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(14); hold on;
-            plot(1:1:5,RelativeAve(k,1:5),'-^','LineWidth',2,'MarkerSize',10);
+            plot(1:5,RelativeAve5(k,1:5),'-^','LineWidth',2,'MarkerSize',10);
+            hold on; %Average
+            plot(1:5,AveRelativeAve5(1,1:5),'--kd','LineWidth',2,'MarkerSize',10);
             hold off;
         end
 
@@ -289,10 +381,10 @@ for k = 1:size(AnimalID,1)
             plot(ModulateBin:ModulateBin:MaxBin,NetCountBinMax(k,1:RoundMax),'-o','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(23); hold on;
-            plot(ModulateBin:ModulateBin:MaxBin,AveBinMax(k,1:RoundMax),'-o','LineWidth',2,'MarkerSize',10);
+            plot(1:10,RelativeAve10(k,1:10),'-o','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(24); hold on;
-            plot(1:1:5,RelativeAve(k,1:5),'-o','LineWidth',2,'MarkerSize',10);
+            plot(1:5,RelativeAve5(k,1:5),'-o','LineWidth',2,'MarkerSize',10);
             hold off;
         elseif k == 11
             figure(21); hold on;
@@ -302,23 +394,29 @@ for k = 1:size(AnimalID,1)
             plot(ModulateBin:ModulateBin:MaxBin,NetCountBinMax(k,1:RoundMax),'-+','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(23); hold on;
-            plot(ModulateBin:ModulateBin:MaxBin,AveBinMax(k,1:RoundMax),'-+','LineWidth',2,'MarkerSize',10);
+            plot(1:10,RelativeAve10(k,1:10),'-+','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(24); hold on;
-            plot(1:1:5,RelativeAve(k,1:5),'-+','LineWidth',2,'MarkerSize',10);
+            plot(1:5,RelativeAve5(k,1:5),'-+','LineWidth',2,'MarkerSize',10);
             hold off;
         elseif k == 12
             figure(21); hold on;
             plot(ModulateBinSiju:ModulateBinSiju:MaxBin,AveBinMaxSiju(k,1:RoundMaxSiju),'-*','LineWidth',2,'MarkerSize',10);
+            hold on; %Average
+            plot(ModulateBinSiju:ModulateBinSiju:MaxBin,AveAveBinMaxSiju(2,1:RoundMaxSiju),'--kd','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(22); hold on;
             plot(ModulateBin:ModulateBin:MaxBin,NetCountBinMax(k,1:RoundMax),'-*','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(23); hold on;
-            plot(ModulateBin:ModulateBin:MaxBin,AveBinMax(k,1:RoundMax),'-*','LineWidth',2,'MarkerSize',10);
+            plot(1:10,RelativeAve10(k,1:10),'-*','LineWidth',2,'MarkerSize',10);
+            hold on; %Average
+            plot(1:10,AveRelativeAve10(2,1:10),'--kd','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(24); hold on;
-            plot(1:1:5,RelativeAve(k,1:5),'-*','LineWidth',2,'MarkerSize',10);
+            plot(1:1:5,RelativeAve5(k,1:5),'-*','LineWidth',2,'MarkerSize',10);
+            hold on; %Average
+            plot(1:5,AveRelativeAve5(2,1:5),'--kd','LineWidth',2,'MarkerSize',10);
             hold off;
         end
 
@@ -331,10 +429,10 @@ for k = 1:size(AnimalID,1)
             plot(ModulateBin:ModulateBin:MaxBin,NetCountBinMax(k,1:RoundMax),'-o','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(33); hold on;
-            plot(ModulateBin:ModulateBin:MaxBin,AveBinMax(k,1:RoundMax),'-o','LineWidth',2,'MarkerSize',10);
+            plot(1:10,RelativeAve10(k,1:10),'-o','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(34); hold on;
-            plot(1:1:5,RelativeAve(k,1:5),'-o','LineWidth',2,'MarkerSize',10);
+            plot(1:1:5,RelativeAve5(k,1:5),'-o','LineWidth',2,'MarkerSize',10);
             hold off;
         elseif k == 6
             figure(31); hold on;
@@ -344,23 +442,29 @@ for k = 1:size(AnimalID,1)
             plot(ModulateBin:ModulateBin:MaxBin,NetCountBinMax(k,1:RoundMax),'-+','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(33); hold on;
-            plot(ModulateBin:ModulateBin:MaxBin,AveBinMax(k,1:RoundMax),'-+','LineWidth',2,'MarkerSize',10);
+            plot(1:10,RelativeAve10(k,1:10),'-+','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(34); hold on;
-            plot(1:1:5,RelativeAve(k,1:5),'-+','LineWidth',2,'MarkerSize',10);
+            plot(1:1:5,RelativeAve5(k,1:5),'-+','LineWidth',2,'MarkerSize',10);
             hold off;
         elseif k == 7
             figure(31); hold on;
             plot(ModulateBinSiju:ModulateBinSiju:MaxBin,AveBinMaxSiju(k,1:RoundMaxSiju),'-*','LineWidth',2,'MarkerSize',10);
+            hold on; %Average
+            plot(ModulateBinSiju:ModulateBinSiju:MaxBin,AveAveBinMaxSiju(3,1:RoundMaxSiju),'--kd','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(32); hold on;
             plot(ModulateBin:ModulateBin:MaxBin,NetCountBinMax(k,1:RoundMax),'-*','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(33); hold on;
-            plot(ModulateBin:ModulateBin:MaxBin,AveBinMax(k,1:RoundMax),'-*','LineWidth',2,'MarkerSize',10);
+            plot(1:10,RelativeAve10(k,1:10),'-*','LineWidth',2,'MarkerSize',10);
+            hold on; %Average
+            plot(1:10,AveRelativeAve10(3,1:10),'--kd','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(34); hold on;
-            plot(1:1:5,RelativeAve(k,1:5),'-*','LineWidth',2,'MarkerSize',10);
+            plot(1:5,RelativeAve5(k,1:5),'-*','LineWidth',2,'MarkerSize',10);
+            hold on; %Average
+            plot(1:5,AveRelativeAve5(3,1:5),'--kd','LineWidth',2,'MarkerSize',10);
             hold off;
         end
 
@@ -373,10 +477,10 @@ for k = 1:size(AnimalID,1)
             plot(ModulateBin:ModulateBin:MaxBin,NetCountBinMax(k,1:RoundMax),'-o','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(43); hold on;
-            plot(ModulateBin:ModulateBin:MaxBin,AveBinMax(k,1:RoundMax),'-o','LineWidth',2,'MarkerSize',10);
+            plot(1:10,RelativeAve10(k,1:10),'-o','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(44); hold on;
-            plot(1:1:5,RelativeAve(k,1:5),'-p','LineWidth',2,'MarkerSize',10);
+            plot(1:1:5,RelativeAve5(k,1:5),'-o','LineWidth',2,'MarkerSize',10);
             hold off;
         elseif k == 9
             figure(41); hold on;
@@ -386,23 +490,29 @@ for k = 1:size(AnimalID,1)
             plot(ModulateBin:ModulateBin:MaxBin,NetCountBinMax(k,1:RoundMax),'-+','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(43); hold on;
-            plot(ModulateBin:ModulateBin:MaxBin,AveBinMax(k,1:RoundMax),'-+','LineWidth',2,'MarkerSize',10);
+            plot(1:10,RelativeAve10(k,1:10),'-+','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(44); hold on;
-            plot(1:1:5,RelativeAve(k,1:5),'-+','LineWidth',2,'MarkerSize',10);
+            plot(1:1:5,RelativeAve5(k,1:5),'-+','LineWidth',2,'MarkerSize',10);
             hold off;
         elseif k == 13
             figure(41); hold on;
             plot(ModulateBinSiju:ModulateBinSiju:MaxBin,AveBinMaxSiju(k,1:RoundMaxSiju),'-*','LineWidth',2,'MarkerSize',10);
+            hold on; %Average
+            plot(ModulateBinSiju:ModulateBinSiju:MaxBin,AveAveBinMaxSiju(4,1:RoundMaxSiju),'--kd','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(42); hold on;
             plot(ModulateBin:ModulateBin:MaxBin,NetCountBinMax(k,1:RoundMax),'-*','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(43); hold on;
-            plot(ModulateBin:ModulateBin:MaxBin,AveBinMax(k,1:RoundMax),'-*','LineWidth',2,'MarkerSize',10);
+            plot(1:10,RelativeAve10(k,1:10),'-*','LineWidth',2,'MarkerSize',10);
+            hold on; %Average
+            plot(1:10,AveRelativeAve10(4,1:10),'--kd','LineWidth',2,'MarkerSize',10);
             hold off;
             figure(44); hold on;
-            plot(1:1:5,RelativeAve(k,1:5),'-*','LineWidth',2,'MarkerSize',10);
+            plot(1:1:5,RelativeAve5(k,1:5),'-*','LineWidth',2,'MarkerSize',10);
+            hold on; %Average
+            plot(1:5,AveRelativeAve5(4,1:5),'--kd','LineWidth',2,'MarkerSize',10);
             hold off;
         end
     else
@@ -410,196 +520,46 @@ for k = 1:size(AnimalID,1)
     end
 end
 
+%plot Averages
+figure(51); hold on;
+plot(ModulateBinSiju:ModulateBinSiju:MaxBin,AveAveBinMaxSiju(4,1:RoundMaxSiju),'-o','LineWidth',2,'MarkerSize',10); hold on;
+plot(ModulateBinSiju:ModulateBinSiju:MaxBin,AveAveBinMaxSiju(3,1:RoundMaxSiju),'-+','LineWidth',2,'MarkerSize',10); hold on;
+plot(ModulateBinSiju:ModulateBinSiju:MaxBin,AveAveBinMaxSiju(2,1:RoundMaxSiju),'-*','LineWidth',2,'MarkerSize',10); hold on;
+plot(ModulateBinSiju:ModulateBinSiju:MaxBin,AveAveBinMaxSiju(1,1:RoundMaxSiju),'-^','LineWidth',2,'MarkerSize',10); hold on;
+hold off;
+figure(52); hold on;
+plot(1:10,AveRelativeAve10(4,1:10),'-o','LineWidth',2,'MarkerSize',10); hold on;
+plot(1:10,AveRelativeAve10(3,1:10),'-+','LineWidth',2,'MarkerSize',10); hold on;
+plot(1:10,AveRelativeAve10(2,1:10),'-*','LineWidth',2,'MarkerSize',10); hold on;
+plot(1:10,AveRelativeAve10(1,1:10),'-^','LineWidth',2,'MarkerSize',10); hold on;
+hold off;
+figure(53); hold on;
+plot(1:5,AveRelativeAve5(4,1:5),'-o','LineWidth',2,'MarkerSize',10); hold on;
+plot(1:5,AveRelativeAve5(3,1:5),'-+','LineWidth',2,'MarkerSize',10); hold on;
+plot(1:5,AveRelativeAve5(2,1:5),'-*','LineWidth',2,'MarkerSize',10); hold on;
+plot(1:5,AveRelativeAve5(1,1:5),'-^','LineWidth',2,'MarkerSize',10); hold on;
+hold off;
+%% Add labels (center slice) (Population mode) 
 
-%% Add labels (max slice)
-%{
-%GdNP+RT starts%
-figure(42);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Total K^{trans}, GdNP+RT');
-xlim([0 50])
-ylim([0 820]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Total K^{trans} (min^{-1})');
-legend('Animal334','Animal337','Animal340','Animal345','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransSum_GdNP+RT_max.eps', '-depsc2');
-
-figure(43);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Voxel count, GdNP+RT');
-xlim([0 50])
-ylim([0 300]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Voxel count');
-legend('Animal334','Animal337','Animal340','Animal345','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'Count_GdNP+RT_max.eps', '-depsc2');
-
-figure(13);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Vol-normalized K^{trans}, GdNP+RT');
-xlim([0 50])
-ylim([0 3.5]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Vol-normalized K^{trans}');
-legend('Animal334','Animal337','Animal340','Animal345','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_GdNP+RT_max.eps', '-depsc2');
-%GdNP+RT ends%
-
-%RT starts%
-figure(21);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Total K^{trans}, RT');
-xlim([0 50])
-ylim([0 820]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Total K^{trans} (min^{-1})');
-legend('Animal351','Animal352','Animal353','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransSum_RT_max.eps', '-depsc2');
-
-figure(22);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Voxel count, RT');
-xlim([0 50])
-ylim([0 300]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Voxel count');
-legend('Animal351','Animal352','Animal353','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'Count_RT_max.eps', '-depsc2');
-
-figure(23);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Vol-normalized K^{trans}, RT');
-xlim([0 50])
-ylim([0 3.5]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Vol-normalized K^{trans}');
-legend('Animal351','Animal352','Animal353','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_RT_max.eps', '-depsc2');
-%RT ends%
-
-%GdNP starts%
-figure(31);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Total K^{trans}, GdNP');
-xlim([0 50])
-ylim([0 820]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Total K^{trans} (min^{-1})');
-legend('Animal338','Animal343','Animal344','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransSum_GdNP_max.eps', '-depsc2');
-
-figure(32);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Voxel count, GdNP');
-xlim([0 50])
-ylim([0 300]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Voxel count');
-legend('Animal338','Animal343','Animal344','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'Count_GdNP_max.eps', '-depsc2');
-
-figure(33);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Vol-normalized K^{trans}, GdNP');
-xlim([0 50])
-ylim([0 3.5]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Vol-normalized K^{trans}');
-legend('Animal338','Animal343','Animal344','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_GdNP_max.eps', '-depsc2');
-%GdNP ends%
-
-%Control starts%
-figure(41);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Total K^{trans}, Control');
-xlim([0 50])
-ylim([0 820]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Total K^{trans} (min^{-1})');
-legend('Animal342','Animal350','Animal355','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransSum_Cont_max.eps', '-depsc2');
-
-figure(42);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Voxel count, Control');
-xlim([0 55]);
-ylim([0 300]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Voxel count');
-legend('Animal342','Animal350','Animal355','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'Count_Cont_max.eps', '-depsc2');
-
-figure(43);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Vol-normalized K^{trans}, Control');
-xlim([0 50]);
-ylim([0 3.5]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Vol-normalized K^{trans}');
-legend('Animal342','Animal350','Animal355','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_Cont_max.eps', '-depsc2');
-%Control ends%
-%}
-
-
-%% Add labels (center slice) (AverageUnderAIFMask mode) 
-%{
 %GdNP+RT starts%
 figure(11);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Vol-normalized K^{trans} (Large bin), GdNP+RT');
+set(gca, 'LineWidth', 2, 'FontSize', 18);
+title('Vol-normalized K^{trans}, GdNP+RT');
 xlim([0 60])
-ylim([0 1.5]);
+ylim([0 0.5]);
 xlabel('Depth from the tumor surface (mm)');
 ylabel('Vol-normalized K^{trans} (min^{-1})');
 legend('Animal334','Animal337','Animal340','Animal345','Location','northeast');
 legend boxoff;
 % Save as eps
 set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_LargeBin_GdNP+RT_center.eps', '-depsc2');
+print(gcf, 'KtransAve_GdNP+RT_LargeBin_center.eps', '-depsc2');
 
 figure(12);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
+set(gca, 'LineWidth', 2, 'FontSize', 18);
 title('Voxel count, GdNP+RT');
 xlim([0 60])
-ylim([0 300]);
+ylim([0 500]);
 xlabel('Depth from the tumor surface (mm)');
 ylabel('Voxel count');
 legend('Animal334','Animal337','Animal340','Animal345','Location','northeast');
@@ -609,51 +569,51 @@ set(gcf, 'PaperPositionMode', 'Auto');
 print(gcf, 'Count_GdNP+RT_center.eps', '-depsc2');
 
 figure(13);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
+set(gca, 'LineWidth', 2, 'FontSize', 18);
 title('Vol-normalized K^{trans}, GdNP+RT');
-xlim([0 60])
-ylim([0 1.5]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Vol-normalized K^{trans} (min^{-1})');
-legend('Animal334','Animal337','Animal340','Animal345','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_GdNP+RT_center.eps', '-depsc2');
-
-figure(14);
-set(gca, 'LineWidth', 2, 'FontSize', 16);
-title('Vol-normalized K^{trans}, Relative Depth, GdNP+RT');
-xlim([0 5])
-ylim([0 1.5]);
+xlim([1 10]);
+ylim([0 0.4]);
 xlabel('Relative distance from tumor edge');
 ylabel('Vol-normalized K^{trans} (min^{-1})');
 legend('Animal334','Animal337','Animal340','Animal345','Location','northeast');
 legend boxoff;
 % Save as eps
 set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_GdNP+RT_center_Relative.eps', '-depsc2');
+print(gcf, 'KtransAve_GdNP+RT_center_Relative_10%.eps', '-depsc2');
+
+figure(14);
+set(gca, 'LineWidth', 2, 'FontSize', 18);
+title('Vol-normalized K^{trans}, GdNP+RT');
+xlim([1 5]);
+ylim([0 0.4]);
+xlabel('Relative distance from tumor edge');
+ylabel('Vol-normalized K^{trans} (min^{-1})');
+legend('Animal334','Animal337','Animal340','Animal345','Location','northeast');
+legend boxoff;
+% Save as eps
+set(gcf, 'PaperPositionMode', 'Auto');
+print(gcf, 'KtransAve_GdNP+RT_center_Relative_20%.eps', '-depsc2');
 %GdNP+RT ends%
 
 %RT starts%
 figure(21);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Vol-normalized K^{trans} (Large bin), RT');
+set(gca, 'LineWidth', 2, 'FontSize', 18);
+title('Vol-normalized K^{trans}, RT');
 xlim([0 60])
-ylim([0 1.5]);
+ylim([0 0.5]);
 xlabel('Depth from the tumor surface (mm)');
 ylabel('Vol-normalized K^{trans} (min^{-1})');
 legend('Animal351','Animal352','Animal353','Location','northeast');
 legend boxoff;
 % Save as eps
 set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_LargeBin_RT_center.eps', '-depsc2');
+print(gcf, 'KtransAve_RT_LargeBin_center.eps', '-depsc2');
 
 figure(22);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
+set(gca, 'LineWidth', 2, 'FontSize', 18);
 title('Voxel count, RT');
 xlim([0 60])
-ylim([0 300]);
+ylim([0 400]);
 xlabel('Depth from the tumor surface (mm)');
 ylabel('Voxel count');
 legend('Animal351','Animal352','Animal353','Location','northeast');
@@ -663,51 +623,51 @@ set(gcf, 'PaperPositionMode', 'Auto');
 print(gcf, 'Count_RT_center.eps', '-depsc2');
 
 figure(23);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Vol-normalized K^{trans} (Large bin), RT');
-xlim([0 60])
-ylim([0 1.5]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Vol-normalized K^{trans} (min^{-1})');
-legend('Animal351','Animal352','Animal353','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_RT_center.eps', '-depsc2');
-
-figure(24);
-set(gca, 'LineWidth', 2, 'FontSize', 16);
-title('Vol-normalized K^{trans}, Relative Depth, RT');
-xlim([0 5])
-ylim([0 1.5]);
+set(gca, 'LineWidth', 2, 'FontSize', 18);
+title('Vol-normalized K^{trans}, RT');
+xlim([1 10]);
+ylim([0 0.4]);
 xlabel('Relative distance from tumor edge');
 ylabel('Vol-normalized K^{trans} (min^{-1})');
 legend('Animal351','Animal352','Animal353','Location','northeast');
 legend boxoff;
 % Save as eps
 set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_RT_center_Relative.eps', '-depsc2');
+print(gcf, 'KtransAve_RT_center_Relative_10%.eps', '-depsc2');
+
+figure(24);
+set(gca, 'LineWidth', 2, 'FontSize', 18);
+title('Vol-normalized K^{trans}, RT');
+xlim([1 5]);
+ylim([0 0.4]);
+xlabel('Relative distance from tumor edge');
+ylabel('Vol-normalized K^{trans} (min^{-1})');
+legend('Animal351','Animal352','Animal353','Location','northeast');
+legend boxoff;
+% Save as eps
+set(gcf, 'PaperPositionMode', 'Auto');
+print(gcf, 'KtransAve_RT_center_Relative_20%.eps', '-depsc2');
 %RT ends%
 
 %GdNP starts%
 figure(31);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Vol-normalized K^{trans} (Large bin), GdNP');
+set(gca, 'LineWidth', 2, 'FontSize', 18);
+title('Vol-normalized K^{trans}, GdNP');
 xlim([0 60])
-ylim([0 1.5]);
+ylim([0 0.5]);
 xlabel('Depth from the tumor surface (mm)');
 ylabel('Vol-normalized K^{trans} (min^{-1})');
 legend('Animal338','Animal343','Animal344','Location','northeast');
 legend boxoff;
 % Save as eps
 set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_LargeBin_GdNP_center.eps', '-depsc2');
+print(gcf, 'KtransAve_GdNP_LargeBin_center.eps', '-depsc2');
 
 figure(32);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
+set(gca, 'LineWidth', 2, 'FontSize', 18);
 title('Voxel count, GdNP');
 xlim([0 60])
-ylim([0 300]);
+ylim([0 400]);
 xlabel('Depth from the tumor surface (mm)');
 ylabel('Voxel count');
 legend('Animal338','Animal343','Animal344','Location','northeast');
@@ -717,51 +677,51 @@ set(gcf, 'PaperPositionMode', 'Auto');
 print(gcf, 'Count_GdNP_center.eps', '-depsc2');
 
 figure(33);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
+set(gca, 'LineWidth', 2, 'FontSize', 18);
 title('Vol-normalized K^{trans}, GdNP');
-xlim([0 60])
-ylim([0 1.5]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Vol-normalized K^{trans} (min^{-1})');
-legend('Animal338','Animal343','Animal344','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_GdNP_center.eps', '-depsc2');
-
-figure(34);
-set(gca, 'LineWidth', 2, 'FontSize', 16);
-title('Vol-normalized K^{trans}, Relative Depth, GdNP');
-xlim([0 5])
-ylim([0 1.5]);
+xlim([1 10]);
+ylim([0 0.4]);
 xlabel('Relative distance from tumor edge');
 ylabel('Vol-normalized K^{trans} (min^{-1})');
 legend('Animal338','Animal343','Animal344','Location','northeast');
 legend boxoff;
 % Save as eps
 set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_GdNP_center_Relative.eps', '-depsc2');
+print(gcf, 'KtransAve_GdNP_center_Relative_10%.eps', '-depsc2');
+
+figure(34);
+set(gca, 'LineWidth', 2, 'FontSize', 18);
+title('Vol-normalized K^{trans}, GdNP');
+xlim([1 5]);
+ylim([0 0.4]);
+xlabel('Relative distance from tumor edge');
+ylabel('Vol-normalized K^{trans} (min^{-1})');
+legend('Animal338','Animal343','Animal344','Location','northeast');
+legend boxoff;
+% Save as eps
+set(gcf, 'PaperPositionMode', 'Auto');
+print(gcf, 'KtransAve_GdNP_center_Relative_20%.eps', '-depsc2');
 %GdNP ends%
 
 %Control starts%
 figure(41);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Vol-normalized K^{trans} (Large bin), Control');
+set(gca, 'LineWidth', 2, 'FontSize', 18);
+title('Vol-normalized K^{trans}, Control');
 xlim([0 60])
-ylim([0 1.5]);
+ylim([0 0.5]);
 xlabel('Depth from the tumor surface (mm)');
 ylabel('Vol-normalized K^{trans} (min^{-1})');
 legend('Animal342','Animal350','Animal355','Location','northeast');
 legend boxoff;
 % Save as eps
 set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_LargeBin_Cont_center.eps', '-depsc2');
+print(gcf, 'KtransAve_Cont_LargeBin_center.eps', '-depsc2');
 
 figure(42);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
+set(gca, 'LineWidth', 2, 'FontSize', 18);
 title('Voxel count, Control');
 xlim([0 60])
-ylim([0 300]);
+ylim([0 400]);
 xlabel('Depth from the tumor surface (mm)');
 ylabel('Voxel count');
 legend('Animal342','Animal350','Animal355','Location','northeast');
@@ -771,246 +731,70 @@ set(gcf, 'PaperPositionMode', 'Auto');
 print(gcf, 'Count_Cont_center.eps', '-depsc2');
 
 figure(43);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
+set(gca, 'LineWidth', 2, 'FontSize', 18);
 title('Vol-normalized K^{trans}, Control');
-xlim([0 60]);
-ylim([0 1.5]);
-xlabel('Depth from the tumor surface (mm)');
+xlim([1 10]);
+ylim([0 0.4]);
+xlabel('Relative distance from tumor edge');
 ylabel('Vol-normalized K^{trans} (min^{-1})');
 legend('Animal342','Animal350','Animal355','Location','northeast');
 legend boxoff;
 % Save as eps
 set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_Cont_center.eps', '-depsc2');
+print(gcf, 'KtransAve_Control_center_Relative_10%.eps', '-depsc2');
 
 figure(44);
-set(gca, 'LineWidth', 2, 'FontSize', 16);
-title('Vol-normalized K^{trans}, Relative Depth, Control');
-xlim([0 5])
-ylim([0 1.5]);
+set(gca, 'LineWidth', 2, 'FontSize', 18);
+title('Vol-normalized K^{trans}, Control');
+xlim([1 5]);
+ylim([0 0.4]);
 xlabel('Relative distance from tumor edge');
 ylabel('Vol-normalized K^{trans} (min^{-1})');
 legend('Animal342','Animal350','Animal355','Location','northeast');
 legend boxoff;
 % Save as eps
 set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_Control_center_Relative.eps', '-depsc2');
+print(gcf, 'KtransAve_Control_center_Relative_20%.eps', '-depsc2');
 %Control ends%
-%}
 
-%% Add labels (center slice) (Population mode) 
-
-%GdNP+RT starts%
-figure(11);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Vol-normalized K^{trans} (Large bin, pop), GdNP+RT');
+%Average starts%
+figure(51);
+set(gca, 'LineWidth', 2, 'FontSize', 18);
+title('Vol-normalized K^{trans}, Average');
 xlim([0 60])
-ylim([0 0.35]);
+ylim([0 0.5]);
 xlabel('Depth from the tumor surface (mm)');
 ylabel('Vol-normalized K^{trans} (min^{-1})');
-legend('Animal334','Animal337','Animal340','Animal345','Location','northeast');
+legend('GdNP+RT','RT-only','GdNP-only','Control','Location','northeast');
 legend boxoff;
 % Save as eps
 set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_LargeBin_GdNP+RT_center_pop.eps', '-depsc2');
+print(gcf, 'KtransAve_Ave_LargeBin_center.eps', '-depsc2');
 
-figure(12);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Voxel count, pop, GdNP+RT');
-xlim([0 60])
-ylim([0 300]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Voxel count');
-legend('Animal334','Animal337','Animal340','Animal345','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'Count_GdNP+RT_center_pop.eps', '-depsc2');
-
-figure(13);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Vol-normalized K^{trans}, pop, GdNP+RT');
-xlim([0 60])
-ylim([0 0.35]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Vol-normalized K^{trans} (min^{-1})');
-legend('Animal334','Animal337','Animal340','Animal345','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-
-figure(14);
-set(gca, 'LineWidth', 2, 'FontSize', 16);
-title('Vol-normalized K^{trans}, pop, Relative Depth, GdNP+RT');
-xlim([0 5])
-ylim([0 0.35]);
+figure(52);
+set(gca, 'LineWidth', 2, 'FontSize', 18);
+title('Vol-normalized K^{trans}, Average');
+xlim([0 10]);
+ylim([0 0.4]);
 xlabel('Relative distance from tumor edge');
 ylabel('Vol-normalized K^{trans} (min^{-1})');
-legend('Animal334','Animal337','Animal340','Animal345','Location','northeast');
+legend('Control','GdNP-only','RT-only','GdNP+RT','Location','northeast');
 legend boxoff;
 % Save as eps
 set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_GdNP+RT_center_pop_Relative.eps', '-depsc2');
-%GdNP+RT ends%
+print(gcf, 'KtransAve_Ave_center_Relative_10%.eps', '-depsc2');
+%Average ends%
 
-%RT starts%
-figure(21);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Vol-normalized K^{trans} (Large bin, pop), RT');
-xlim([0 60])
-ylim([0 0.35]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Vol-normalized K^{trans} (min^{-1})');
-legend('Animal351','Animal352','Animal353','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_LargeBin_RT_center_pop.eps', '-depsc2');
-
-figure(22);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Voxel count, pop, RT');
-xlim([0 60])
-ylim([0 300]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Voxel count');
-legend('Animal351','Animal352','Animal353','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'Count_RT_center_pop.eps', '-depsc2');
-
-figure(23);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Vol-normalized K^{trans}, pop, RT');
-xlim([0 60])
-ylim([0 0.35]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Vol-normalized K^{trans} (min^{-1})');
-legend('Animal351','Animal352','Animal353','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_RT_center_pop.eps', '-depsc2');
-
-figure(24);
-set(gca, 'LineWidth', 2, 'FontSize', 16);
-title('Vol-normalized K^{trans}, pop, Relative Depth, RT');
-xlim([0 5])
-ylim([0 0.35]);
+figure(53);
+set(gca, 'LineWidth', 2, 'FontSize', 18);
+title('Vol-normalized K^{trans}, Average');
+xlim([0 5]);
+ylim([0 0.4]);
 xlabel('Relative distance from tumor edge');
 ylabel('Vol-normalized K^{trans} (min^{-1})');
-legend('Animal351','Animal352','Animal353','Location','northeast');
+legend('Control','GdNP-only','RT-only','GdNP+RT','Location','northeast');
 legend boxoff;
 % Save as eps
 set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_RT_center_pop_Relative.eps', '-depsc2');
-%RT ends%
-
-%GdNP starts%
-figure(31);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Vol-normalized K^{trans} (Large bin, pop), GdNP');
-xlim([0 60])
-ylim([0 0.35]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Vol-normalized K^{trans} (min^{-1})');
-legend('Animal338','Animal343','Animal344','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_LargeBin_GdNP_center_pop.eps', '-depsc2');
-
-figure(32);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Voxel count, pop, GdNP');
-xlim([0 60])
-ylim([0 300]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Voxel count');
-legend('Animal338','Animal343','Animal344','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'Count_GdNP_center_pop.eps', '-depsc2');
-
-figure(33);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Vol-normalized K^{trans}, pop, GdNP');
-xlim([0 60])
-ylim([0 0.35]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Vol-normalized K^{trans} (min^{-1})');
-legend('Animal338','Animal343','Animal344','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_GdNP_center_pop.eps', '-depsc2');
-
-figure(34);
-set(gca, 'LineWidth', 2, 'FontSize', 16);
-title('Vol-normalized K^{trans}, pop, Relative Depth, GdNP');
-xlim([0 5])
-ylim([0 0.35]);
-xlabel('Relative distance from tumor edge');
-ylabel('Vol-normalized K^{trans} (min^{-1})');
-legend('Animal338','Animal343','Animal344','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_GdNP_center_pop_Relative.eps', '-depsc2');
-%GdNP ends%
-
-%Control starts%
-figure(41);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Vol-normalized K^{trans} (Large bin, pop), Control');
-xlim([0 60])
-ylim([0 0.35]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Vol-normalized K^{trans} (min^{-1})');
-legend('Animal342','Animal350','Animal355','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_LargeBin_Cont_center_pop.eps', '-depsc2');
-
-figure(42);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Voxel count, Control, pop');
-xlim([0 60])
-ylim([0 300]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Voxel count');
-legend('Animal342','Animal350','Animal355','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'Count_Cont_center_pop.eps', '-depsc2');
-
-figure(43);
-set(gca, 'LineWidth', 2, 'FontSize', 20);
-title('Vol-normalized K^{trans}, Control, pop');
-xlim([0 60]);
-ylim([0 0.35]);
-xlabel('Depth from the tumor surface (mm)');
-ylabel('Vol-normalized K^{trans} (min^{-1})');
-legend('Animal342','Animal350','Animal355','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_Cont_center_pop.eps', '-depsc2');
-
-figure(44);
-set(gca, 'LineWidth', 2, 'FontSize', 16);
-title('Vol-normalized K^{trans}, pop, Relative Depth, Control');
-xlim([0 5])
-ylim([0 0.35]);
-xlabel('Relative distance from tumor edge');
-ylabel('Vol-normalized K^{trans} (min^{-1})');
-legend('Animal342','Animal350','Animal355','Location','northeast');
-legend boxoff;
-% Save as eps
-set(gcf, 'PaperPositionMode', 'Auto');
-print(gcf, 'KtransAve_Control_center_pop_Relative.eps', '-depsc2');
-%Control ends%
+print(gcf, 'KtransAve_Ave_center_Relative_20%.eps', '-depsc2');
+%Average ends%
